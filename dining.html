@@ -4,7 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>悉尼吃什么 | Sydney Dining Guide</title>
+
     <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="theme-color" content="#FF9A9E">
 
     <script src="https://cdn.tailwindcss.com"></script>
@@ -21,132 +23,101 @@
         .glass-effect { 
             background: rgba(255, 255, 255, 0.92); 
             backdrop-filter: blur(16px); 
+            -webkit-backdrop-filter: blur(16px);
             border-bottom: 2px solid rgba(0, 0, 0, 0.05);
         }
         .btn-transition { transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); }
+        
         .bg-vivid {
             background-color: #FF9A9E;
             background-image: linear-gradient(160deg, #FF9A9E 0%, #FECFEF 50%, #FFB6C1 100%);
             min-height: 100vh;
         }
+        
         .btn-active-black {
             background-color: #000 !important;
             color: #fff !important;
             border-color: #000 !important;
         }
-        /* 心形动画 */
-        .heart-pop { animation: heartPop 0.3s ease-out; }
-        @keyframes heartPop { 0% { transform: scale(1); } 50% { transform: scale(1.3); } 100% { transform: scale(1); } }
     </style>
 </head>
-<body class="bg-vivid text-gray-900 antialiased" x-data="diningApp()" x-init="init()">
-
-    <div class="fixed top-4 right-4 z-[60]">
-        <template x-if="!user">
-            <button @click="showLoginModal = true" class="group flex items-center gap-2 bg-white/80 hover:bg-white backdrop-blur-md border border-white/50 px-3 py-1.5 rounded-full shadow-sm hover:shadow-md transition-all duration-300">
-                <span class="w-6 h-6 rounded-full bg-slate-200 flex items-center justify-center text-slate-500 group-hover:bg-rose-100 group-hover:text-rose-500 transition-colors">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
-                </span>
-                <span class="text-xs font-bold text-slate-600 group-hover:text-slate-900">登录</span>
-            </button>
-        </template>
-        <template x-if="user">
-            <div class="flex items-center gap-2">
-                <div class="flex items-center gap-2 bg-white/80 backdrop-blur-md border border-white/50 px-3 py-1.5 rounded-full shadow-sm">
-                    <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
-                    <span class="text-xs font-bold text-slate-700" x-text="getUserName()"></span>
-                </div>
-                <button @click="logout()" class="w-8 h-8 flex items-center justify-center bg-white/50 hover:bg-rose-100 text-slate-500 hover:text-rose-600 rounded-full transition-colors" title="退出">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
-                </button>
-            </div>
-        </template>
-    </div>
-
-    <div x-show="showLoginModal" class="fixed inset-0 z-[70] flex items-center justify-center px-4" x-cloak>
-        <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" @click="showLoginModal = false"></div>
-        <div class="bg-white w-full max-w-sm rounded-3xl shadow-2xl overflow-hidden relative z-10 p-8" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 scale-95 translate-y-4" x-transition:enter-end="opacity-100 scale-100 translate-y-0">
-            <button @click="showLoginModal = false" class="absolute top-4 right-4 text-slate-400 hover:text-slate-800 transition-colors">✕</button>
-            <div class="text-center mb-6">
-                <h2 class="text-2xl font-black text-slate-800" x-text="isRegisterMode ? '创建账号' : '欢迎回来'"></h2>
-                <p class="text-sm text-slate-500 font-bold mt-1">登录后即可收藏餐厅</p>
-            </div>
-            <form class="space-y-4" @submit.prevent="handleAuth">
-                <input type="email" x-model="authEmail" required placeholder="邮箱" class="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 font-bold text-sm">
-                <input type="password" x-model="authPassword" required minlength="6" placeholder="密码" class="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 font-bold text-sm">
-                <div x-show="authError" class="text-red-500 text-xs font-bold text-center" x-text="authError"></div>
-                <button type="submit" :disabled="authLoading" class="w-full py-3 bg-black text-white rounded-xl font-bold shadow-lg disabled:opacity-50">
-                    <span x-text="authLoading ? '处理中...' : (isRegisterMode ? '注册' : '登录')"></span>
-                </button>
-            </form>
-            <div class="mt-6 text-center">
-                <p class="text-xs font-bold text-slate-400">
-                    <span x-text="isRegisterMode ? '已有账号？' : '还没有账号？'"></span>
-                    <button @click="toggleMode()" class="text-rose-500 hover:text-rose-600 ml-1 underline underline-offset-2">
-                        <span x-text="isRegisterMode ? '去登录' : '免费注册'"></span>
-                    </button>
-                </p>
-            </div>
-        </div>
-    </div>
+<body class="bg-vivid text-gray-900 antialiased" x-data="diningApp()">
 
     <header class="glass-effect sticky top-0 z-40 transition-all duration-300 shadow-md">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+            
+            <div class="flex justify-between items-start mb-4">
+                <div>
+                    <h1 class="text-l font-black text-gray-900 tracking-tight drop-shadow-sm flex items-center gap-2">
+                        <a href="index.html" class="hover:opacity-70 transition-opacity">🏠</a>
+                        <span>悉尼吃什么</span>
+                    </h1>
+                    <p class="text-xs text-gray-600 font-bold tracking-wide uppercase mt-1">Dining Guide • Server-side Mode</p>
+                </div>
+
+                <div>
+                    <template x-if="!user">
+                        <button @click="showLoginModal = true" class="group flex items-center gap-2 bg-white hover:bg-black hover:text-white border border-gray-200 px-3 py-1.5 rounded-full shadow-sm transition-all duration-300">
+                            <span class="w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 group-hover:bg-gray-800 group-hover:text-white transition-colors">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+                            </span>
+                            <span class="text-xs font-bold">登录</span>
+                        </button>
+                    </template>
+
+                    <template x-if="user">
+                        <div class="flex items-center gap-2">
+                            <div class="hidden md:flex items-center gap-2 bg-white/80 border border-white/50 px-3 py-1.5 rounded-full">
+                                <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+                                <span class="text-xs font-bold text-slate-700" x-text="user.email.split('@')[0]"></span>
+                            </div>
+                            <button @click="toggleOnlyFavorites()" :class="showOnlyFavorites ? 'bg-rose-500 text-white border-rose-500' : 'bg-white text-gray-500 border-gray-200'" class="w-8 h-8 md:w-auto md:h-auto md:px-3 md:py-1.5 flex items-center justify-center border rounded-full transition-colors" title="我的收藏">
+                                <span x-text="showOnlyFavorites ? '❤️ 已藏' : '🤍 收藏'"></span>
+                            </button>
+                            <button @click="logout()" class="w-8 h-8 flex items-center justify-center bg-gray-100 hover:bg-gray-200 text-gray-500 rounded-full transition-colors" title="退出">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
+                            </button>
+                        </div>
+                    </template>
+                </div>
+            </div>
+
             <div class="flex flex-col md:flex-row justify-between items-center gap-4 mb-2">
-                <div class="text-center md:text-left pt-6 md:pt-0">
-                    <h1 class="text-l font-black text-gray-900 tracking-tight drop-shadow-sm">悉尼吃什么 | Sydney Dining Guide</h1>
-                    <div class="flex items-center justify-center md:justify-start gap-3 mt-3">
-                        <p class="text-xs text-gray-600 font-bold tracking-wide uppercase mt-1">美食荒漠吃饭指南 </p>
-                        <button @click="shareApp()" class="text-[10px] font-bold text-gray-600 hover:text-black hover:bg-white flex items-center gap-1 transition-colors bg-white/50 border border-gray-300 px-3 py-1 rounded-full shadow-sm">📤 分享</button>
-                    </div>
+                <div class="relative w-full md:w-64 group">
+                    <input x-model.debounce.500ms="search" @input="resetPage()" type="text" placeholder="🔍 搜店名/区域 (回车搜索)..." 
+                        class="w-full pl-9 pr-4 py-2.5 rounded-2xl border-2 border-transparent bg-white focus:border-black focus:ring-0 outline-none text-sm font-medium transition-all shadow-md placeholder-gray-400">
                 </div>
                 
-                <div class="flex gap-3 w-full md:w-auto">
-                    <div class="relative flex-grow md:flex-grow-0 md:w-64 group">
-                        <input x-model="search" @input="isShuffleMode = false; currentPage = 1" type="text" placeholder="🔍 搜店名、区域..." 
-                            class="w-full pl-9 pr-4 py-2.5 rounded-2xl border-2 border-transparent bg-white focus:border-black focus:ring-0 outline-none text-sm font-medium transition-all shadow-md placeholder-gray-400">
-                    </div>
-                    <button @click="pickRandom()" class="bg-black hover:bg-gray-800 text-white border-2 border-black px-4 py-2 rounded-2xl text-sm font-bold shadow-xl flex items-center gap-2 whitespace-nowrap">
-                        <span>🎲</span> <span class="hidden sm:inline">帮我选</span>
+                <div class="flex gap-2 w-full md:w-auto justify-end">
+                    <button @click="pickRandomServerSide()" 
+                        class="bg-black hover:bg-gray-800 text-white border-2 border-black px-4 py-2 rounded-2xl text-sm font-bold shadow-xl transition-all duration-300 flex items-center gap-2 transform hover:-translate-y-1">
+                        <span>🎲</span> <span>帮我选</span>
                     </button>
                 </div>
             </div>
 
             <div class="pb-1">
                 <div x-show="showFilters" x-collapse class="space-y-3 pt-2">
-                    
-                    <div class="flex items-center gap-2 overflow-x-auto hide-scroll pb-2 border-b border-dashed border-gray-300">
-                        <span class="text-xs font-black text-gray-400 uppercase shrink-0">👤 个人</span>
-                        <button @click="toggleOnlySaved()" 
-                                :class="onlySaved ? 'bg-rose-500 text-white border-rose-500' : 'bg-white text-gray-600 border-gray-200 hover:text-rose-500 hover:border-rose-200'"
-                                class="btn-transition px-4 py-1.5 rounded-lg text-xs font-bold border-2 shadow-sm flex items-center gap-1 shrink-0">
-                            <span>❤️</span> 我的收藏 (<span x-text="savedIds.length"></span>)
-                        </button>
-                    </div>
-
                     <div :class="expanded.suburbs ? 'overflow-visible' : 'overflow-x-auto hide-scroll'">
                         <div :class="expanded.suburbs ? 'flex flex-wrap gap-2 items-center' : 'flex space-x-2 min-w-max items-center'">
-                            <div @click="toggleExpand('suburbs')" class="cursor-pointer flex items-center gap-1 mr-2 px-1 py-1 rounded hover:bg-gray-100 transition-colors select-none">
+                            <div @click="toggleExpand('suburbs')" class="cursor-pointer flex items-center gap-1 mr-2 px-1 py-1 rounded hover:bg-gray-100 select-none">
                                 <span class="text-xs font-black text-gray-400 uppercase w-12">📍 区域</span>
                                 <span class="text-[8px] text-gray-400" x-text="expanded.suburbs ? '▲' : '▼'"></span>
                             </div>
-                            <button @click="resetFilter('suburbs')" :class="activeSuburbs.length === 0 ? 'btn-active-black' : 'bg-white text-gray-600 border-gray-200 hover:border-black hover:text-black'" class="btn-transition px-3 py-1.5 rounded-lg text-xs font-bold border-2 shadow-sm">全部</button>
+                            <button @click="resetFilter('suburbs')" :class="activeSuburbs.length === 0 ? 'btn-active-black' : 'bg-white text-gray-600'" class="btn-transition px-3 py-1.5 rounded-lg text-xs font-bold border-2 shadow-sm border-gray-200">全部</button>
                             <template x-for="suburb in suburbs" :key="suburb">
-                                <button @click="toggleFilter('activeSuburbs', suburb)" :class="activeSuburbs.includes(suburb) ? 'btn-active-black' : 'bg-white text-gray-600 border-gray-200 hover:border-black hover:text-black'" class="btn-transition px-3 py-1.5 rounded-lg text-xs font-bold border-2 shadow-sm" x-text="suburb"></button>
+                                <button @click="toggleFilter('activeSuburbs', suburb)" :class="activeSuburbs.includes(suburb) ? 'btn-active-black' : 'bg-white text-gray-600 hover:border-black'" class="btn-transition px-3 py-1.5 rounded-lg text-xs font-bold border-2 border-gray-200 shadow-sm" x-text="suburb"></button>
                             </template>
                         </div>
                     </div>
 
-                    <div class="border-t border-dashed border-gray-300 pt-2" :class="expanded.categories ? 'overflow-visible' : 'overflow-x-auto hide-scroll'">
-                        <div :class="expanded.categories ? 'flex flex-wrap gap-2 items-center' : 'flex space-x-2 min-w-max items-center'">
-                            <div @click="toggleExpand('categories')" class="cursor-pointer flex items-center gap-1 mr-2 px-1 py-1 rounded hover:bg-gray-100 transition-colors select-none">
-                                <span class="text-xs font-black text-gray-400 uppercase w-12">🍴 类别</span>
-                                <span class="text-[8px] text-gray-400" x-text="expanded.categories ? '▲' : '▼'"></span>
-                            </div>
-                            <button @click="resetFilter('categories')" :class="activeCategories.length === 0 ? 'bg-teal-600 text-white border-teal-600' : 'bg-white text-gray-600 border-gray-200 hover:border-teal-600 hover:text-teal-600'" class="btn-transition px-3 py-1.5 rounded-lg text-xs font-bold border-2 shadow-sm">全部</button>
-                            <template x-for="cat in categories" :key="cat">
-                                <button @click="toggleFilter('activeCategories', cat)" :class="activeCategories.includes(cat) ? 'bg-teal-600 text-white border-teal-600' : 'bg-white text-gray-600 border-gray-200 hover:border-teal-600 hover:text-teal-600'" class="btn-transition px-3 py-1.5 rounded-lg text-xs font-bold border-2 shadow-sm" x-text="cat"></button>
-                            </template>
+                    <div class="border-t border-dashed border-gray-300 pt-2 overflow-x-auto hide-scroll">
+                         <div class="flex space-x-2 min-w-max items-center">
+                            <span class="text-xs font-black text-gray-400 uppercase w-12 mr-2">💰 价位</span>
+                            <button @click="resetFilter('prices')" :class="activePrices.length === 0 ? 'bg-orange-500 text-white border-orange-500' : 'bg-white text-gray-600 border-gray-200'" class="btn-transition px-3 py-1.5 rounded-lg text-xs font-bold border-2 shadow-sm">全部</button>
+                            <button @click="toggleFilter('activePrices', 1)" :class="activePrices.includes(1) ? 'bg-orange-500 text-white border-orange-500' : 'bg-white text-gray-600 border-gray-200'" class="btn-transition px-4 py-1.5 rounded-lg text-xs font-bold border-2 shadow-sm">$</button>
+                            <button @click="toggleFilter('activePrices', 2)" :class="activePrices.includes(2) ? 'bg-orange-500 text-white border-orange-500' : 'bg-white text-gray-600 border-gray-200'" class="btn-transition px-4 py-1.5 rounded-lg text-xs font-bold border-2 shadow-sm">$$</button>
+                            <button @click="toggleFilter('activePrices', 3)" :class="activePrices.includes(3) ? 'bg-orange-500 text-white border-orange-500' : 'bg-white text-gray-600 border-gray-200'" class="btn-transition px-4 py-1.5 rounded-lg text-xs font-bold border-2 shadow-sm">$$$</button>
                         </div>
                     </div>
                 </div>
@@ -154,85 +125,61 @@
                 <div class="flex justify-between items-center py-2 cursor-pointer select-none border-t border-dashed border-gray-300 mt-2" @click="showFilters = !showFilters">
                     <span class="text-xs font-black text-gray-500 uppercase tracking-wider flex items-center gap-2">
                         <span>筛选条件</span>
-                        <span x-show="!showFilters" class="bg-black text-white px-2 py-0.5 rounded-full text-[10px] font-bold" x-text="'已选 ' + (activeSuburbs.length + activeCategories.length)"></span>
+                        <span x-show="isLoading" class="text-rose-500 animate-pulse">↻ 加载中...</span>
                     </span>
-                    <button class="text-xs font-bold text-gray-600 hover:text-black flex items-center gap-1 transition-colors">
-                        <span x-text="showFilters ? '收起' : '展开'"></span>
-                        <span class="transform transition-transform duration-300" :class="showFilters ? 'rotate-180' : ''">▼</span>
-                    </button>
+                    <button class="text-xs font-bold text-gray-600 flex items-center gap-1"><span x-text="showFilters ? '收起' : '展开'"></span></button>
                 </div>
             </div>
         </div>
     </header>
 
-    <div x-show="showRandomizer" class="fixed inset-0 z-50 flex items-center justify-center px-4" x-cloak>
-        <div class="absolute inset-0 bg-black/70 backdrop-blur-sm" @click="showRandomizer = false"></div>
-        <div class="bg-white rounded-3xl shadow-2xl w-full max-w-md relative z-10 overflow-hidden flex flex-col h-[500px]" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100">
-            <button @click="showRandomizer = false" class="absolute top-3 right-3 z-30 w-8 h-8 flex items-center justify-center rounded-full bg-black/40 text-white hover:bg-black transition-colors">✕</button>
-            
-            <div class="flex-1 overflow-hidden flex flex-col relative bg-white">
-                <div class="w-full h-56 shrink-0 relative bg-gray-100 group">
-                    <img :src="randomResult?.image" class="w-full h-full object-cover">
-                    <div class="absolute top-4 left-4 z-20 bg-black text-white text-[10px] font-black uppercase px-3 py-1.5 rounded-full shadow-lg">IT'S FATE!</div>
-                    
-                    <button @click.stop="toggleFavorite(randomResult.id)" 
-                        class="absolute bottom-4 right-4 z-30 w-10 h-10 flex items-center justify-center rounded-full bg-white/90 backdrop-blur shadow-lg transition-transform active:scale-90">
-                        <span class="text-xl leading-none pt-1" :class="isSaved(randomResult?.id) ? 'text-rose-500' : 'text-gray-300 grayscale'">
-                            <span x-text="isSaved(randomResult?.id) ? '❤️' : '🤍'"></span>
-                        </span>
-                    </button>
-                </div>
-                <div class="p-6 flex-1 flex flex-col items-center text-center">
-                    <div class="flex gap-2 mb-2">
-                         <span class="text-[10px] font-black uppercase px-2 py-1 rounded bg-gray-100 text-gray-800" x-text="randomResult?.suburb"></span>
-                         <span class="text-[10px] font-black px-2 py-1 rounded bg-teal-100 text-teal-800" x-text="randomResult?.displayCategory"></span>
-                    </div>
-                    <h2 class="text-2xl font-black text-gray-900 mb-2" x-text="randomResult?.name"></h2>
-                    <p class="text-sm text-gray-600 line-clamp-3" x-text="randomResult?.desc"></p>
-                </div>
+    <div x-show="showLoginModal" class="fixed inset-0 z-[60] flex items-center justify-center px-4" x-cloak>
+        <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" @click="showLoginModal = false" x-transition.opacity></div>
+        <div class="bg-white w-full max-w-sm rounded-3xl shadow-2xl relative z-10 p-8" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 scale-95 translate-y-4" x-transition:enter-end="opacity-100 scale-100 translate-y-0">
+            <button @click="showLoginModal = false" class="absolute top-4 right-4 text-slate-400 hover:text-slate-800"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
+            <div class="text-center mb-6">
+                <h2 class="text-2xl font-black text-slate-800" x-text="isRegisterMode ? '创建账号' : '欢迎回来'"></h2>
+                <p class="text-sm text-slate-500 font-bold mt-1">开启收藏功能</p>
             </div>
-
-            <div class="grid grid-cols-4 border-t border-gray-100 bg-gray-50 shrink-0 py-3 items-center text-center h-[72px]">
-                <a :href="randomResult ? 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(randomResult.name + ' ' + randomResult.suburb + ' Sydney') : '#'" target="_blank" class="flex flex-col items-center justify-center py-2 hover:text-green-600 transition-colors">
-                    <span class="text-xl mb-1">📍</span><span class="text-[10px] font-bold">导航</span>
-                </a>
-                <button @click="pickRandom()" class="flex flex-col items-center justify-center py-2 hover:text-black transition-colors col-span-2">
-                    <div class="bg-black text-white px-6 py-2 rounded-xl shadow-lg hover:scale-105 transition-transform flex items-center gap-2">
-                        <span class="text-lg">🎲</span><span class="text-xs font-bold">换一家</span>
-                    </div>
+            <form class="space-y-4" @submit.prevent="handleAuth">
+                <div><label class="block text-xs font-bold text-slate-500 uppercase mb-1 ml-1">邮箱</label><input type="email" x-model="authEmail" required class="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 focus:border-rose-400 outline-none font-bold text-sm"></div>
+                <div><label class="block text-xs font-bold text-slate-500 uppercase mb-1 ml-1">密码</label><input type="password" x-model="authPassword" required minlength="6" class="w-full px-4 py-3 rounded-xl bg-slate-50 border border-slate-200 focus:border-rose-400 outline-none font-bold text-sm"></div>
+                <div x-show="authError" class="text-red-500 text-xs font-bold text-center" x-text="authError"></div>
+                <button type="submit" :disabled="authLoading" class="w-full py-3.5 bg-slate-900 hover:bg-rose-500 text-white rounded-xl font-bold shadow-lg transition-all flex justify-center items-center">
+                    <span x-text="authLoading ? '处理中...' : (isRegisterMode ? '立即注册' : '登 录')"></span>
                 </button>
-                <button @click="copyKeyword(randomResult?.name)" class="flex flex-col items-center justify-center py-2 hover:text-red-500 transition-colors">
-                    <span class="text-xl mb-1">📕</span><span class="text-[10px] font-bold">复制</span>
-                </button>
-            </div>
+            </form>
+            <div class="mt-6 text-center"><p class="text-xs font-bold text-slate-400"><span x-text="isRegisterMode ? '已有账号？' : '还没有账号？'"></span><button @click="isRegisterMode = !isRegisterMode; authError=''" class="text-rose-500 hover:text-rose-600 ml-1 underline">切换</button></p></div>
         </div>
     </div>
 
     <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 min-h-screen">
         <div class="flex justify-between items-end mb-6 px-1 border-b border-black/10 pb-2">
             <span class="text-sm text-gray-800 font-bold bg-white/50 px-2 py-1 rounded-md">
-                共 <strong x-text="filteredRestaurants.length" class="text-black"></strong> 家
-                <span x-show="onlySaved" class="text-rose-500 ml-1">(已收藏)</span>
-                <span x-show="restaurants.length === 0" class="text-orange-600 ml-2 animate-pulse">(加载中...)</span>
+                <span x-show="isLoading">⏳ 加载数据中...</span>
+                <span x-show="!isLoading">共 <strong x-text="totalCount" class="text-black"></strong> 家餐厅</span>
             </span>
-            <span x-show="filteredRestaurants.length > 0" class="text-xs text-gray-700 font-bold bg-white/50 px-2 py-1 rounded-md">
-                <span x-text="currentPage"></span> / <span x-text="totalPages"></span> 页
+            <span class="text-xs text-gray-700 font-bold bg-white/50 px-2 py-1 rounded-md">
+                第 <span x-text="currentPage"></span> / <span x-text="Math.ceil(totalCount / itemsPerPage) || 1"></span> 页
             </span>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-            <template x-for="r in paginatedRestaurants" :key="r.id">
-                <div @click="openModal(r)" class="group bg-white rounded-2xl shadow-lg hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 overflow-hidden flex flex-col h-full relative cursor-pointer ring-1 ring-black/5">
-                    
-                    <button @click.stop="toggleFavorite(r.id)" 
-                        class="absolute top-2 right-2 z-30 w-8 h-8 flex items-center justify-center rounded-full bg-white/80 backdrop-blur hover:bg-white shadow-md transition-all hover:scale-110 active:scale-90 group-card-heart">
-                        <span class="text-base leading-none pt-0.5" :class="isSaved(r.id) ? 'text-rose-500 heart-pop' : 'text-gray-300 grayscale group-hover:grayscale-0'">
-                            <span x-text="isSaved(r.id) ? '❤️' : '🤍'"></span>
-                        </span>
-                    </button>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 relative">
+            
+            <div x-show="isLoading" class="absolute inset-0 z-10 bg-white/50 backdrop-blur-sm flex items-start justify-center pt-20" x-transition.opacity>
+                <div class="bg-black text-white px-4 py-2 rounded-full font-bold shadow-xl animate-bounce">正在从云端获取美味...</div>
+            </div>
 
+            <template x-for="r in restaurants" :key="r.id">
+                <div class="group bg-white rounded-2xl shadow-lg hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 overflow-hidden flex flex-col h-full relative ring-1 ring-black/5">
+                    <div class="absolute top-0 left-0 w-1.5 h-full z-10" :class="getSuburbColor(r.suburb)"></div>
+
+                    <button @click.stop="toggleFavorite(r)" class="absolute top-3 right-3 z-30 w-8 h-8 flex items-center justify-center rounded-full bg-white/80 backdrop-blur shadow-md hover:scale-110 transition-transform cursor-pointer">
+                        <span class="text-lg leading-none mt-0.5" x-text="favorites.has(r.id) ? '❤️' : '🤍'"></span>
+                    </button>
+                    
                     <div class="h-40 w-full bg-gray-100 relative overflow-hidden shrink-0">
-                         <img :src="r.image" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" loading="lazy">
+                         <img :src="optimizeImage(r.image)" loading="lazy" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" alt="Food">
                          <div class="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-black/20 to-transparent"></div>
                     </div>
 
@@ -240,9 +187,9 @@
                         <div class="flex justify-between items-start mb-3">
                             <div class="flex flex-wrap gap-2">
                                 <span class="text-[10px] font-black uppercase px-2 py-0.5 rounded bg-gray-100 text-gray-600" x-text="r.suburb"></span>
-                                <span class="text-[10px] font-black uppercase px-2 py-0.5 rounded bg-teal-50 text-teal-800" x-text="r.displayCategory"></span>
+                                <span class="text-[10px] font-black uppercase px-2 py-0.5 rounded bg-teal-50 text-teal-800 border border-teal-100" x-text="r.category"></span>
                             </div>
-                            <span class="text-xs font-black text-orange-600" x-text="getPriceIcon(r.priceLevel)"></span>
+                            <div class="text-xs font-black tracking-widest text-orange-600" x-text="getPriceIcon(r.priceLevel)"></div>
                         </div>
                         
                         <h3 class="text-lg font-black text-gray-900 leading-tight mb-1" x-text="r.name"></h3>
@@ -250,32 +197,28 @@
                         
                         <div class="mt-auto pt-3 border-t border-gray-100 flex justify-between items-center gap-2">
                             <div class="flex flex-wrap gap-1">
-                                <template x-for="dish in r.dishes.slice(0, 2)">
-                                    <span class="inline-block px-2 py-0.5 rounded text-[10px] font-bold bg-orange-50 text-orange-800 border border-orange-100" x-text="dish"></span>
-                                </template>
+                                <span class="text-xs text-yellow-500 font-bold" x-text="'⭐'.repeat(r.recommendationLevel)"></span>
                             </div>
-                            <button @click.stop="copyKeyword(r.name)" class="text-[10px] text-gray-500 bg-gray-50 hover:bg-red-50 hover:text-red-600 px-2 py-1 rounded font-bold">📕 搜</button>
+                            <a :href="'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(r.name + ' ' + r.suburb)" target="_blank" class="text-[10px] bg-gray-100 hover:bg-green-100 hover:text-green-700 px-2 py-1 rounded font-bold transition-colors">📍 导航</a>
                         </div>
                     </div>
                 </div>
             </template>
         </div>
         
-        <div x-show="filteredRestaurants.length === 0" class="text-center py-20" x-cloak>
-            <p class="text-white font-bold bg-black/20 inline-block px-4 py-2 rounded-full backdrop-blur-sm" x-text="onlySaved ? '还没有收藏任何餐厅，快去点亮爱心吧！' : '没有符合条件的餐厅...'"></p>
+        <div x-show="!isLoading && restaurants.length === 0" class="text-center py-20">
+            <p class="text-gray-500 font-bold">没有找到符合条件的餐厅...</p>
         </div>
 
-        <div x-show="totalPages > 1" class="flex justify-center items-center gap-4 mt-12 mb-6" x-cloak>
-            <button @click="changePage(currentPage - 1)" :disabled="currentPage === 1" class="px-4 py-2 text-sm font-bold rounded-xl bg-white hover:border-black border-2 border-transparent shadow disabled:opacity-50">← 上一页</button>
-            <span class="text-sm font-black bg-white/50 px-3 py-1 rounded"><span x-text="currentPage"></span> / <span x-text="totalPages"></span></span>
-            <button @click="changePage(currentPage + 1)" :disabled="currentPage === totalPages" class="px-4 py-2 text-sm font-bold rounded-xl bg-white hover:border-black border-2 border-transparent shadow disabled:opacity-50">下一页 →</button>
+        <div x-show="totalCount > itemsPerPage" class="flex justify-center items-center gap-4 mt-12 mb-6">
+            <button @click="changePage(currentPage - 1)" :disabled="currentPage === 1" class="px-4 py-2 text-sm font-bold rounded-xl bg-white shadow-lg disabled:opacity-50">← 上一页</button>
+            <span class="text-sm font-black text-gray-900 bg-white/50 px-3 py-1 rounded-lg"><span x-text="currentPage"></span> / <span x-text="Math.ceil(totalCount / itemsPerPage)"></span></span>
+            <button @click="changePage(currentPage + 1)" :disabled="currentPage * itemsPerPage >= totalCount" class="px-4 py-2 text-sm font-bold rounded-xl bg-white shadow-lg disabled:opacity-50">下一页 →</button>
         </div>
     </main>
 
-    <div x-show="showToast" class="fixed bottom-10 left-1/2 transform -translate-x-1/2 z-[70] bg-black text-white px-6 py-3 rounded-full shadow-2xl flex items-center gap-3 pointer-events-none" 
-         x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 translate-y-4" x-transition:enter-end="opacity-100 translate-y-0"
-         x-transition:leave="transition ease-in duration-200" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0" x-cloak>
-        <span class="text-lg">✅</span><span class="text-sm font-bold" x-text="toastMessage"></span>
+    <div x-show="showToast" x-transition.opacity class="fixed bottom-10 left-1/2 transform -translate-x-1/2 z-[70] bg-black text-white px-6 py-3 rounded-full shadow-2xl flex items-center gap-3 pointer-events-none" x-cloak>
+        <span x-text="toastMessage" class="text-sm font-bold"></span>
     </div>
 
     <script>
@@ -285,230 +228,255 @@
 
         function diningApp() {
             return {
+                // Auth States
                 user: null,
-                savedIds: [], 
                 showLoginModal: false,
                 isRegisterMode: false,
                 authEmail: '',
                 authPassword: '',
                 authLoading: false,
                 authError: '',
+                favorites: new Set(), // 存储收藏的 ID Set
+                showOnlyFavorites: false,
 
+                // Data States
                 restaurants: [],
+                totalCount: 0,
+                isLoading: false,
                 search: '',
+                
+                // Filters
+                expanded: { suburbs: false },
+                showFilters: true,
+                suburbs: [], // 从数据库动态获取
+                activeSuburbs: [],
+                activePrices: [],
+                
+                // Server-side Pagination
                 currentPage: 1,
                 itemsPerPage: 24,
-                showFilters: true,
-                expanded: { suburbs: false, categories: false, prices: false, stars: false },
-                
-                activeSuburbs: [],
-                activeCategories: [],
-                activePrices: [],
-                activeStars: [],
-                onlyGoodFood: false,
-                onlyTrending: false, 
-                onlyPick: false,
-                onlyHiddenGem: false,
-                onlySaved: false,
-                suburbs: [],
-                categories: [],
 
+                // Toast
                 showToast: false,
                 toastMessage: '',
-                showRandomizer: false,
-                randomResult: null,
-                isReporting: false,
-                reportText: '报错',
-
-                defaultImages: {
-                    'Japanese': 'https://images.unsplash.com/photo-1580822184713-fc54006efa4e?w=800&q=80',
-                    'Korean': 'https://images.unsplash.com/photo-1580651315530-69c8e0026377?w=800&q=80',
-                    'Thai': 'https://images.unsplash.com/photo-1559314809-0d155014e29e?w=800&q=80',
-                    'Chinese': 'https://images.unsplash.com/photo-1525164286253-04e68b9d94c6?w=800&q=80',
-                    'Other': 'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=800&q=80'
-                },
 
                 async init() {
+                    // 1. 检查 Session
                     const { data: { session } } = await supabaseClient.auth.getSession();
                     this.user = session?.user || null;
-                    if(this.user) await this.fetchFavorites();
-
-                    supabaseClient.auth.onAuthStateChange(async (_event, session) => {
+                    
+                    supabaseClient.auth.onAuthStateChange(async (event, session) => {
                         this.user = session?.user || null;
-                        if(this.user) { await this.fetchFavorites(); } 
-                        else { this.savedIds = []; this.onlySaved = false; }
+                        if (this.user) {
+                            await this.fetchFavorites();
+                        } else {
+                            this.favorites.clear();
+                        }
                     });
 
-                    await this.fetchRestaurants();
+                    // 2. 并行加载：收藏数据 + 筛选项 + 第一页数据
+                    this.isLoading = true;
+                    if(this.user) await this.fetchFavorites();
+                    await this.fetchSuburbsList(); 
+                    await this.fetchData();
+                    this.isLoading = false;
                 },
 
-                async fetchRestaurants() {
+                // --- 核心：后端数据获取 ---
+                async fetchData() {
+                    this.isLoading = true;
                     try {
-                        let { data, error } = await supabaseClient.from('restaurant').select('*');
-                        if (error) throw error;
-                        
-                        this.restaurants = data.map((row, index) => {
-                            // 保留您原来完美的图片清洗逻辑
-                            let rawCat = row.category ? row.category.trim() : '其他';
-                            if (rawCat.length > 0) rawCat = rawCat.charAt(0).toUpperCase() + rawCat.slice(1).toLowerCase();
-                            
-                            let cleanCat = rawCat;
-                            if(rawCat.includes('Japan')) cleanCat = 'Japanese';
-                            if(rawCat.includes('Korea')) cleanCat = 'Korean';
+                        let query = supabaseClient.from('restaurant')
+                            .select('*', { count: 'exact' }); // 获取总数用于分页
 
-                            let rawData = row.images || row.image || '';
-                            let strData = String(rawData).replace(/["']/g, ''); // 关键：去引号
-
-                            let imagesArray = [];
-                            if (strData.includes('|||')) {
-                                imagesArray = strData.split('|||').map(s => s.trim()).filter(s => s.startsWith('http'));
-                            } else if (strData.includes(',')) {
-                                imagesArray = strData.split(',').map(s => s.trim()).filter(s => s.startsWith('http'));
-                            } else if (strData.startsWith('http')) {
-                                imagesArray = [strData.trim()];
+                        // 1. 收藏筛选 (如果只看收藏)
+                        if (this.showOnlyFavorites) {
+                            if (this.favorites.size === 0) {
+                                this.restaurants = [];
+                                this.totalCount = 0;
+                                this.isLoading = false;
+                                return;
                             }
-                            const fallbackImage = this.defaultImages[cleanCat] || this.defaultImages['Other'];
-                            if (imagesArray.length === 0) imagesArray = [fallbackImage];
+                            query = query.in('id', Array.from(this.favorites));
+                        }
 
-                            return {
-                                id: row.id || index,
-                                name: row.name || '未知餐厅',
-                                suburb: row.suburb ? row.suburb.trim() : '其他',
-                                category: rawCat,
-                                displayCategory: rawCat,
-                                priceLevel: row.price_level || 1,
-                                recommendationLevel: row.rating || 0,
-                                desc: row.description || '暂无描述',
-                                dishes: row.dishes ? (Array.isArray(row.dishes) ? row.dishes : String(row.dishes).split(/,|，/)) : [],
-                                goodFoodValue: row.award_label || '',
-                                isTrend: row.is_trend, 
-                                isPick: row.is_pick,
-                                isHidden: row.is_hidden,
-                                image: imagesArray[0],
-                                images: imagesArray
-                            };
+                        // 2. 文本搜索 (后端模糊匹配)
+                        if (this.search) {
+                            // 搜索名字或区域 (注意：Supabase 的 .or 语法)
+                            query = query.or(`name.ilike.%${this.search}%,suburb.ilike.%${this.search}%`);
+                        }
+
+                        // 3. 筛选条件
+                        if (this.activeSuburbs.length > 0) {
+                            query = query.in('suburb', this.activeSuburbs);
+                        }
+                        if (this.activePrices.length > 0) {
+                            query = query.in('price_level', this.activePrices);
+                        }
+
+                        // 4. 分页 (.range)
+                        const from = (this.currentPage - 1) * this.itemsPerPage;
+                        const to = from + this.itemsPerPage - 1;
+                        query = query.range(from, to).order('id', { ascending: true }); // 确保顺序固定
+
+                        const { data, count, error } = await query;
+                        
+                        if (error) throw error;
+
+                        this.restaurants = this.processData(data);
+                        this.totalCount = count;
+
+                    } catch (err) {
+                        console.error("加载失败:", err);
+                        this.triggerToast("数据加载失败，请重试");
+                    } finally {
+                        this.isLoading = false;
+                    }
+                },
+
+                // --- 辅助：获取区域列表 (只加载一次) ---
+                async fetchSuburbsList() {
+                    // 为了性能，我们这里只取前50个热门区域，或者你可以建一个单独的 suburbs 表
+                    // 这里简单演示：取前200个餐厅的区域做样本（生产环境建议用 RPC 或单独表）
+                    const { data } = await supabaseClient.from('restaurant').select('suburb').range(0, 299);
+                    if(data) {
+                        const counts = {};
+                        data.forEach(r => { 
+                            const s = r.suburb ? r.suburb.trim() : '其他';
+                            counts[s] = (counts[s] || 0) + 1; 
                         });
-                        this.calculateFilters();
-                    } catch (e) { 
-                        console.error(e); 
-                        if(String(e).includes('JWT') || String(e).includes('40')) {
-                             alert("加载失败，请检查数据库是否开启了 RLS 权限 (第一步 SQL)"); 
-                        }
+                        this.suburbs = Object.keys(counts).sort();
                     }
                 },
 
+                // --- 辅助：加载收藏 ---
                 async fetchFavorites() {
-                    if(!this.user) return;
-                    try {
-                        let { data, error } = await supabaseClient.from('favorites').select('restaurant_id').eq('user_id', this.user.id);
-                        if(error) throw error;
-                        this.savedIds = data.map(item => item.restaurant_id);
-                    } catch (e) { console.error("加载收藏失败", e); }
+                    if (!this.user) return;
+                    const { data, error } = await supabaseClient
+                        .from('favorites')
+                        .select('restaurant_id');
+                    if (!error && data) {
+                        this.favorites = new Set(data.map(item => item.restaurant_id));
+                    }
                 },
 
-                async toggleFavorite(id) {
-                    if(!this.user) { this.showLoginModal = true; return; }
-                    const isAlreadySaved = this.savedIds.includes(id);
-                    if (isAlreadySaved) {
-                        this.savedIds = this.savedIds.filter(sid => sid !== id);
-                        this.triggerToast('已取消收藏');
-                    } else {
-                        this.savedIds.push(id);
-                        this.triggerToast('❤️ 已加入收藏');
+                // --- 动作：切换收藏 ---
+                async toggleFavorite(restaurant) {
+                    if (!this.user) {
+                        this.showLoginModal = true;
+                        return;
                     }
-                    try {
-                        if (isAlreadySaved) {
-                            await supabaseClient.from('favorites').delete().match({ user_id: this.user.id, restaurant_id: id });
-                        } else {
-                            await supabaseClient.from('favorites').insert({ user_id: this.user.id, restaurant_id: id });
+                    const id = restaurant.id;
+                    if (this.favorites.has(id)) {
+                        // 取消收藏
+                        const { error } = await supabaseClient.from('favorites').delete().match({ user_id: this.user.id, restaurant_id: id });
+                        if (!error) {
+                            this.favorites.delete(id);
+                            this.triggerToast("💔 已取消收藏");
+                            if(this.showOnlyFavorites) this.fetchData(); // 如果在收藏页，刷新列表
                         }
-                    } catch (error) {
-                        console.error("操作失败", error);
-                        await this.fetchFavorites(); 
-                        this.triggerToast('操作失败，请重试');
+                    } else {
+                        // 添加收藏
+                        const { error } = await supabaseClient.from('favorites').insert({ user_id: this.user.id, restaurant_id: id });
+                        if (!error) {
+                            this.favorites.add(id);
+                            this.triggerToast("❤️ 已加入收藏");
+                        }
                     }
                 },
-                isSaved(id) { return this.savedIds.includes(id); },
-                toggleOnlySaved() {
+
+                // --- 动作：仅看收藏 ---
+                toggleOnlyFavorites() {
                     if(!this.user) { this.showLoginModal = true; return; }
-                    this.onlySaved = !this.onlySaved;
+                    this.showOnlyFavorites = !this.showOnlyFavorites;
                     this.currentPage = 1;
+                    this.fetchData();
                 },
 
-                toggleMode() { this.isRegisterMode = !this.isRegisterMode; this.authError = ''; },
+                // --- 动作：帮我选 (后端随机) ---
+                async pickRandomServerSide() {
+                    // 后端随机比较复杂，这里使用“随机页码 + 随机偏移”的近似算法
+                    // 1. 获取当前筛选条件下的总数
+                    const count = this.totalCount;
+                    if (count === 0) { alert('当前没有餐厅可选'); return; }
+                    
+                    const randomOffset = Math.floor(Math.random() * count);
+                    
+                    // 2. Fetch one random row
+                    let query = supabaseClient.from('restaurant').select('*').range(randomOffset, randomOffset);
+                    
+                    // 重复之前的筛选逻辑 (为了确保随机的也是符合条件的)
+                    if (this.showOnlyFavorites) query = query.in('id', Array.from(this.favorites));
+                    if (this.activeSuburbs.length) query = query.in('suburb', this.activeSuburbs);
+                    if (this.activePrices.length) query = query.in('price_level', this.activePrices);
+
+                    const { data } = await query;
+                    if (data && data.length > 0) {
+                        const r = this.processData(data)[0];
+                        alert(`命运的选择：\n🍽️ ${r.name}\n📍 ${r.suburb}`);
+                    }
+                },
+
+                // --- 数据处理与图片优化 ---
+                processData(data) {
+                    return data.map(row => {
+                        // 图片处理
+                        let rawImg = row.image || row.images || '';
+                        let imgUrl = String(rawImg).replace(/["']/g, '').split('|||')[0].split(',')[0].trim();
+                        if (!imgUrl.startsWith('http')) imgUrl = 'https://images.unsplash.com/photo-1414235077428-338989a2e8c0'; // Fallback
+                        
+                        return {
+                            ...row,
+                            image: imgUrl,
+                            category: row.category ? row.category.charAt(0).toUpperCase() + row.category.slice(1).toLowerCase() : '其他'
+                        };
+                    });
+                },
+
+                optimizeImage(url) {
+                    // 针对 Unsplash 等图床进行参数优化
+                    if (url.includes('unsplash.com')) {
+                        return url + (url.includes('?') ? '&' : '?') + 'w=500&q=80&auto=format';
+                    }
+                    return url;
+                },
+
+                // --- Auth Logic ---
                 async handleAuth() {
                     this.authLoading = true; this.authError = '';
                     try {
-                        if (this.isRegisterMode) {
-                            const { error } = await supabaseClient.auth.signUp({ email: this.authEmail, password: this.authPassword });
-                            if (error) throw error;
-                            alert('注册成功！'); this.showLoginModal = false;
-                        } else {
-                            const { error } = await supabaseClient.auth.signInWithPassword({ email: this.authEmail, password: this.authPassword });
-                            if (error) throw error;
-                            this.showLoginModal = false; this.authEmail = ''; this.authPassword = '';
-                        }
-                    } catch (e) { this.authError = e.message === 'Invalid login credentials' ? '账号或密码错误' : e.message; }
+                        const { error } = this.isRegisterMode 
+                            ? await supabaseClient.auth.signUp({ email: this.authEmail, password: this.authPassword })
+                            : await supabaseClient.auth.signInWithPassword({ email: this.authEmail, password: this.authPassword });
+                        if (error) throw error;
+                        this.showLoginModal = false;
+                        this.triggerToast(this.isRegisterMode ? '注册成功' : '登录成功');
+                    } catch (e) { this.authError = e.message; }
                     finally { this.authLoading = false; }
                 },
-                async logout() { if(confirm('确定要退出吗？')) await supabaseClient.auth.signOut(); },
-                getUserName() { if (!this.user || !this.user.email) return 'User'; return this.user.email.split('@')[0]; },
+                async logout() {
+                    await supabaseClient.auth.signOut();
+                    this.showOnlyFavorites = false;
+                    this.fetchData(); // Reload public data
+                },
 
-                calculateFilters() {
-                    const counts = {};
-                    this.restaurants.forEach(r => counts[r.suburb] = (counts[r.suburb] || 0) + 1);
-                    this.suburbs = Object.keys(counts).sort((a,b) => counts[b] - counts[a]).slice(0, 30).sort();
-                    this.categories = [...new Set(this.restaurants.map(r => r.category))].filter(Boolean).sort();
+                // --- UI Helpers ---
+                toggleExpand(section) { this.expanded[section] = !this.expanded[section]; },
+                toggleFilter(arr, val) {
+                    if (this[arr].includes(val)) this[arr] = this[arr].filter(x => x !== val);
+                    else this[arr].push(val);
+                    this.resetPage();
                 },
-                get filteredRestaurants() {
-                    return this.restaurants.filter(r => {
-                        const q = this.search.toLowerCase();
-                        const matchSearch = r.name.toLowerCase().includes(q) || r.suburb.toLowerCase().includes(q) || r.displayCategory.toLowerCase().includes(q) || r.desc.toLowerCase().includes(q);
-                        const matchSuburb = this.activeSuburbs.length === 0 || this.activeSuburbs.includes(r.suburb);
-                        const matchCat = this.activeCategories.length === 0 || this.activeCategories.includes(r.category);
-                        const matchPrice = this.activePrices.length === 0 || this.activePrices.includes(r.priceLevel);
-                        const matchStars = this.activeStars.length === 0 || this.activeStars.includes(r.recommendationLevel);
-                        const matchGoodFood = !this.onlyGoodFood || (r.goodFoodValue && r.goodFoodValue.length > 0);
-                        const matchTrend = !this.onlyTrending || r.isTrend;
-                        const matchPick = !this.onlyPick || r.isPick;
-                        const matchHidden = !this.onlyHiddenGem || r.isHidden;
-                        const matchSaved = !this.onlySaved || this.savedIds.includes(r.id);
-                        return matchSearch && matchSuburb && matchCat && matchPrice && matchStars && matchGoodFood && matchTrend && matchPick && matchHidden && matchSaved;
-                    });
+                resetFilter(type) {
+                    if (type === 'suburbs') this.activeSuburbs = [];
+                    if (type === 'prices') this.activePrices = [];
+                    this.resetPage();
                 },
-                get paginatedRestaurants() {
-                    const start = (this.currentPage - 1) * this.itemsPerPage;
-                    const source = this.isShuffleMode ? this.shuffledList : this.filteredRestaurants;
-                    return source.slice(start, start + this.itemsPerPage);
-                },
-                get totalPages() {
-                    const source = this.isShuffleMode ? this.shuffledList : this.filteredRestaurants;
-                    return Math.ceil(source.length / this.itemsPerPage);
-                },
-                changePage(p) { if(p >= 1 && p <= this.totalPages) { this.currentPage = p; window.scrollTo({top:0, behavior:'smooth'}); } },
-                toggleFilter(arr, val) { if(this[arr].includes(val)) this[arr] = this[arr].filter(i => i!==val); else this[arr].push(val); this.currentPage = 1; this.isShuffleMode = false; },
-                resetFilter(arr) { if(arr === 'suburbs') this.activeSuburbs = []; if(arr === 'categories') this.activeCategories = []; if(arr === 'prices') this.activePrices = []; if(arr === 'stars') { this.activeStars = []; this.onlyGoodFood = false; this.onlyTrending = false; this.onlyPick = false; this.onlyHiddenGem = false; } this.currentPage = 1; this.isShuffleMode = false; },
-                toggleExpand(k) { this.expanded[k] = !this.expanded[k]; },
-                openModal(r) { this.randomResult = r; this.showRandomizer = true; this.isRandomPick = false; },
-                pickRandom() { const pool = this.filteredRestaurants; if(pool.length) { this.randomResult = pool[Math.floor(Math.random()*pool.length)]; this.showRandomizer = true; this.isRandomPick = true; } else { alert('当前筛选结果为空'); } },
-                triggerToast(msg) { this.toastMessage = msg; this.showToast = true; setTimeout(() => this.showToast = false, 2000); },
-                copyKeyword(t) { if(navigator.clipboard) navigator.clipboard.writeText('悉尼 '+t).then(()=>this.triggerToast('已复制关键词')); },
-                getPriceIcon(l) { return ['$','$$','$$$'][l-1] || ''; },
-                getStars(l) { return '⭐'.repeat(l); },
-                shareApp() { if(navigator.share) navigator.share({title:'悉尼吃什么', url:window.location.href}); else { navigator.clipboard.writeText(window.location.href); this.triggerToast('链接已复制'); } },
-                async reportError(id) {
-                    if (!id || this.isReporting) return;
-                    if (!confirm("确定要为这家餐厅报错吗？")) return;
-                    this.isReporting = true; this.reportText = '提交中...';
-                    const restaurant = this.restaurants.find(r => r.id === id);
-                    const name = restaurant ? restaurant.name : '未知ID: ' + id;
-                    try {
-                        const { error } = await supabaseClient.from('reports').insert([{ restaurant_name: name, message: '用户点击了报错按钮' }]);
-                        if (error) throw error;
-                        this.triggerToast('✅ 反馈已提交'); this.reportText = '已反馈';
-                    } catch (error) { console.error(error); alert("提交失败"); this.reportText = '重试'; } 
-                    finally { setTimeout(() => { this.isReporting = false; if (this.reportText === '已反馈') this.reportText = '报错'; }, 2000); }
-                }
+                resetPage() { this.currentPage = 1; this.fetchData(); },
+                changePage(p) { this.currentPage = p; window.scrollTo({top:0, behavior:'smooth'}); this.fetchData(); },
+                triggerToast(msg) { this.toastMessage = msg; this.showToast = true; setTimeout(() => this.showToast=false, 2000); },
+                getSuburbColor(s) { const map = {'Burwood':'bg-purple-500','Rhodes':'bg-sky-500'}; return map[s] || 'bg-black'; },
+                getPriceIcon(l) { return l==1?'$':l==2?'$$':l==3?'$$$':''; }
             }
         }
     </script>
