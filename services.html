@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>悉尼办事指南 | Sydney Life Hub</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; }
+        [x-cloak] { display: none !important; }
+        
+        /* 自定义滚动条 */
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
+        .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+
+<body x-data="servicesApp()" x-init="init()" class="bg-slate-50 min-h-screen flex flex-col relative overflow-x-hidden selection:bg-purple-500 selection:text-white">
+
+    <div class="absolute top-0 left-0 w-96 h-96 bg-purple-300 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob pointer-events-none fixed"></div>
+    <div class="absolute top-0 right-0 w-96 h-96 bg-indigo-300 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob animation-delay-2000 pointer-events-none fixed"></div>
+    <div class="absolute bottom-0 left-20 w-96 h-96 bg-blue-200 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob animation-delay-4000 pointer-events-none fixed"></div>
+
+    <nav class="sticky top-0 z-40 w-full backdrop-blur-md bg-white/70 border-b border-white/50 px-4 py-3 shadow-sm">
+        <div class="max-w-6xl mx-auto flex justify-between items-center">
+            <a href="index.html" class="flex items-center gap-2 group">
+                <div class="w-8 h-8 rounded-xl bg-slate-900 text-white flex items-center justify-center group-hover:bg-purple-600 transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                    </svg>
+                </div>
+                <span class="font-bold text-slate-700 group-hover:text-purple-700 transition-colors">返回首页</span>
+            </a>
+            
+            <template x-if="user">
+                <div class="flex items-center gap-2">
+                    <div class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
+                    <span class="text-xs font-bold text-slate-600" x-text="getUserName()"></span>
+                </div>
+            </template>
+        </div>
+    </nav>
+
+    <main class="flex-grow w-full max-w-6xl mx-auto px-4 py-8 z-10 relative">
+        
+        <div class="text-center mb-10 space-y-3">
+            <div class="inline-block p-3 rounded-2xl bg-purple-100 text-purple-600 mb-2 shadow-inner">
+                <span class="text-4xl">📑</span>
+            </div>
+            <h1 class="text-3xl md:text-5xl font-black text-slate-800 tracking-tight">悉尼办事指南</h1>
+            <p class="text-slate-500 font-medium max-w-xl mx-auto">从落地办理手机卡、银行卡，到驾照转换与租房攻略，这里是您在悉尼生活的行政百科全书。</p>
+        </div>
+
+        <div class="flex flex-wrap justify-center gap-2 md:gap-4 mb-10">
+            <template x-for="cat in categories" :key="cat.id">
+                <button @click="activeCategory = cat.id" 
+                    :class="activeCategory === cat.id ? 'bg-purple-600 text-white shadow-lg shadow-purple-200 scale-105' : 'bg-white text-slate-600 hover:bg-purple-50'"
+                    class="px-5 py-2 rounded-full text-sm font-bold border border-transparent transition-all duration-300">
+                    <span x-text="cat.name"></span>
+                </button>
+            </template>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+            <template x-for="item in filteredServices" :key="item.title">
+                <div @click="openDetail(item)" class="group bg-white/80 backdrop-blur-sm rounded-3xl p-6 border border-white shadow-sm hover:shadow-xl hover:shadow-purple-100/50 transition-all duration-300 cursor-pointer hover:-translate-y-1 relative overflow-hidden">
+                    <div class="absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl from-purple-100 to-transparent opacity-50 rounded-bl-full -mr-4 -mt-4 transition-transform group-hover:scale-150 duration-500"></div>
+                    
+                    <div class="relative z-10">
+                        <div class="flex justify-between items-start mb-4">
+                            <span class="text-4xl bg-slate-50 p-3 rounded-2xl shadow-sm group-hover:rotate-6 transition-transform duration-300" x-text="item.icon"></span>
+                            <span class="px-2.5 py-1 rounded-lg bg-slate-100 text-slate-500 text-[10px] font-bold uppercase tracking-wider" x-text="getCategoryName(item.category)"></span>
+                        </div>
+                        
+                        <h3 class="text-xl font-bold text-slate-800 mb-2 group-hover:text-purple-700 transition-colors" x-text="item.title"></h3>
+                        <p class="text-sm text-slate-500 font-medium leading-relaxed line-clamp-2" x-text="item.desc"></p>
+                        
+                        <div class="mt-4 flex items-center text-purple-600 text-xs font-bold opacity-0 group-hover:opacity-100 transform translate-y-2 group-hover:translate-y-0 transition-all duration-300">
+                            查看流程 <svg class="w-4 h-4 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg>
+                        </div>
+                    </div>
+                </div>
+            </template>
+        </div>
+
+        <div x-show="filteredServices.length === 0" class="text-center py-20 text-slate-400" x-cloak>
+            <p class="font-bold text-lg">🚧 该分类下暂无内容，正在整理中...</p>
+        </div>
+    </main>
+
+    <footer class="mt-12 py-8 text-center border-t border-slate-200/50 bg-white/30 backdrop-blur-sm">
+        <p class="text-xs text-slate-400 font-bold">© 2025 Sydney Life Hub - Services</p>
+    </footer>
+
+    <div x-show="modalOpen" class="fixed inset-0 z-[100] flex items-center justify-center px-4" x-cloak>
+        <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity" 
+             x-show="modalOpen"
+             x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
+             x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0"
+             @click="closeDetail()"></div>
+
+        <div class="bg-white w-full max-w-2xl rounded-[2rem] shadow-2xl overflow-hidden relative z-10 max-h-[85vh] flex flex-col"
+             x-show="modalOpen"
+             x-transition:enter="ease-out duration-300" x-transition:enter-start="opacity-0 scale-95 translate-y-10" x-transition:enter-end="opacity-100 scale-100 translate-y-0"
+             x-transition:leave="ease-in duration-200" x-transition:leave-start="opacity-100 scale-100 translate-y-0" x-transition:leave-end="opacity-0 scale-95 translate-y-10">
+            
+            <div class="bg-slate-50 p-6 border-b border-slate-100 flex justify-between items-center shrink-0">
+                <div class="flex items-center gap-4">
+                    <span class="text-4xl" x-text="selectedItem?.icon"></span>
+                    <div>
+                        <h2 class="text-2xl font-black text-slate-800" x-text="selectedItem?.title"></h2>
+                        <p class="text-xs font-bold text-slate-500 uppercase tracking-widest mt-1" x-text="getCategoryName(selectedItem?.category)"></p>
+                    </div>
+                </div>
+                <button @click="closeDetail()" class="p-2 rounded-full hover:bg-slate-200 text-slate-400 hover:text-slate-700 transition-colors">
+                    <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
+            </div>
+
+            <div class="p-6 overflow-y-auto scrollbar-hide">
+                <p class="text-slate-600 font-medium text-lg mb-6 leading-relaxed" x-text="selectedItem?.desc"></p>
+                
+                <template x-if="selectedItem?.materials">
+                    <div class="mb-6 bg-yellow-50 p-4 rounded-xl border border-yellow-100">
+                        <h4 class="font-bold text-yellow-800 mb-2 flex items-center text-sm"><span class="mr-2">🎒</span> 所需材料</h4>
+                        <ul class="list-disc list-inside space-y-1">
+                            <template x-for="mat in selectedItem.materials">
+                                <li class="text-sm text-yellow-900/80 font-medium" x-text="mat"></li>
+                            </template>
+                        </ul>
+                    </div>
+                </template>
+
+                <template x-if="selectedItem?.steps">
+                    <div>
+                        <h4 class="font-bold text-slate-800 mb-4 text-sm uppercase tracking-wide">办理步骤</h4>
+                        <div class="space-y-4">
+                            <template x-for="(step, index) in selectedItem.steps">
+                                <div class="flex gap-4">
+                                    <div class="flex-shrink-0 w-8 h-8 rounded-full bg-purple-100 text-purple-600 font-bold flex items-center justify-center text-sm" x-text="index + 1"></div>
+                                    <div class="pt-1">
+                                        <p class="text-slate-700 font-medium text-sm leading-relaxed" x-text="step"></p>
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+                </template>
+            </div>
+
+            <div class="p-4 border-t border-slate-100 bg-slate-50 shrink-0 text-center">
+                <a href="#" class="inline-flex items-center justify-center px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-xl font-bold transition-all shadow-lg shadow-purple-200 text-sm">
+                    前往官网办理 / 查看详情
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 配置 Supabase (请确保与 index.html 一致)
+        const SUPABASE_URL = 'https://ggnqbroahaggwttkhnwe.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdnbnFicm9haGFnZ3d0dGtobndlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU4NzM2MjEsImV4cCI6MjA4MTQ0OTYyMX0.T0TS44LkY15MBa2wWqECC0nbDro0DICGBluSWFh6HrA';
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        function servicesApp() {
+            return {
+                user: null,
+                activeCategory: 'all',
+                modalOpen: false,
+                selectedItem: null,
+
+                categories: [
+                    { id: 'all', name: '全部' },
+                    { id: 'essential', name: '落地必备' },
+                    { id: 'transport', name: '交通出行' },
+                    { id: 'housing', name: '租房水电' },
+                    { id: 'official', name: '证件签证' }
+                ],
+
+                // 核心数据：办事指南列表
+                services: [
+                    {
+                        category: 'essential',
+                        title: '申请税号 (TFN)',
+                        icon: '🔢',
+                        desc: 'Tax File Number (TFN) 是你在澳洲工作、报税的唯一标识。所有有收入意向的人都必须申请，通常在入境后即可网上免费办理。',
+                        materials: ['护照信息', '澳洲居住地址', '澳洲手机号码', '电子邮箱'],
+                        steps: [
+                            '登录 ATO 官网 (ato.gov.au) 选择 "Apply for a TFN".',
+                            '选择 "Foreign passport holders, permanent migrants and temporary visitors".',
+                            '填写个人护照信息、出生地、澳洲住址等。',
+                            '提交后会生成一个 Application Reference Number，请截图保存。',
+                            'TFN 信件通常会在 28 天内寄送到你的住址。'
+                        ]
+                    },
+                    {
+                        category: 'essential',
+                        title: '银行开户',
+                        icon: '💳',
+                        desc: '澳洲四大行 (CommBank, Westpac, NAB, ANZ) 均支持新移民/留学生开户。建议落地后尽快携带护照去线下网点激活账户。',
+                        materials: ['护照原件', '签证信 (Visa Grant Notice)', '税务居民证明 (TIN，即国内身份证号)', '澳洲手机号'],
+                        steps: [
+                            '可在国内提前在银行官网申请（可转入资金但不可转出）。',
+                            '抵达澳洲后，携带材料前往最近的支行（Branch）。',
+                            '办理 Transaction Account (日常消费) 和 Savings Account (储蓄生息)。',
+                            '下载银行 App，并关联 PayID (使用手机号收款)。'
+                        ]
+                    },
+                    {
+                        category: 'essential',
+                        title: '手机卡办理',
+                        icon: '📱',
+                        desc: '澳洲三大运营商：Telstra (信号最好/贵), Optus (平衡), Vodafone (城市还可以/便宜)。亦可选择虚拟运营商如 Woolworths Mobile, Amaysim。',
+                        materials: ['护照', '银行卡 (用于设置自动扣款)', '住址'],
+                        steps: [
+                            '机场、超市或运营商门店购买 SIM 卡 (Prepaid)。',
+                            '上网激活，填写个人信息进行实名认证。',
+                            '选择套餐，如果是学生可以留意 Student Deal。',
+                            '保留原号码可以通过 "Port Number" 将号码转入新运营商。'
+                        ]
+                    },
+                    {
+                        category: 'transport',
+                        title: 'Opal 公交卡',
+                        icon: '🚍',
+                        desc: '悉尼及新州周边的公共交通一卡通。现在也支持直接使用 Visa/Mastercard 信用卡或 Apple Pay 刷卡乘车，费率相同。',
+                        materials: ['无需材料 (成人卡)', '学生证/Concession卡 (优惠卡需申请)'],
+                        steps: [
+                            '便利店或车站购买 Opal 成人卡（黑色）。',
+                            '下载 Opal Travel App 充值并管理余额。',
+                            '留学生通常没有交通优惠（部分奖学金除外），直接刷信用卡最方便。',
+                            '周五、周六、周日享受全天封顶票价优惠。'
+                        ]
+                    },
+                    {
+                        category: 'transport',
+                        title: '海外驾照转 NSW 驾照',
+                        icon: '🚗',
+                        desc: '持中国驾照（25岁以上）通常需要通过理论考和路考才能换取 NSW Full License。临时签证持有者如果在 NSW 居住超过特定时间也必须换照。',
+                        materials: ['护照', '中国驾照原件 + NAATI 翻译件', '居住证明 (银行账单等)', '视力测试'],
+                        steps: [
+                            '前往 Service NSW 预约参加 DKT (理论考试)。',
+                            '理论考通过后，预约 Driving Test (路考)。',
+                            '路考非常严格，建议找教练练习考试路线。',
+                            '考试通过后当场拍照制证，驾照会邮寄到家。'
+                        ]
+                    },
+                    {
+                        category: 'housing',
+                        title: '租房押金 (Rental Bond)',
+                        icon: '🏠',
+                        desc: '在新州租房，押金必须由房东上交给 NSW Fair Trading 保管，而不是房东私人持有。这是保护租客权益的关键。',
+                        materials: ['Rental Bond Online 账户 (由中介发起)'],
+                        steps: [
+                            '签署租房合同后，中介会通过 RBO (Rental Bonds Online) 发送邮件。',
+                            '登录 RBO 网站，直接在线支付押金（通常为4周房租）。',
+                            '退房时，双方确认无误后，资金会直接退回到租客银行卡。',
+                            '如果发生纠纷，可向 NCAT 申请仲裁。'
+                        ]
+                    },
+                    {
+                        category: 'official',
+                        title: '中国领事馆办事',
+                        icon: '🇨🇳',
+                        desc: '中国驻悉尼总领事馆。处理护照换发、旅行证、养老金资格审核、公证认证等业务。',
+                        materials: ['"中国领事" APP'],
+                        steps: [
+                            '下载 "中国领事" APP 并进行实名认证。',
+                            '选择 "护照旅行证" 业务，在线填写信息并上传照片。',
+                            '通过 APP 视频面审或到馆见面（视具体规定）。',
+                            '邮寄旧护照及回邮信封至领事馆，等待新证件寄回。'
+                        ]
+                    },
+                    {
+                        category: 'housing',
+                        title: '电力与煤气开通',
+                        icon: '⚡',
+                        desc: '澳洲电力公司众多 (Origin, AGL, Red Energy 等)。整租房需要自己开通账户。',
+                        materials: ['入住日期', '详细地址', '证件信息'],
+                        steps: [
+                            '比较不同电力公司的费率 (使用 Energy Made Easy 网站)。',
+                            '在线登记入住日期 (Move in date)。',
+                            '确保入住当天总闸已开启。',
+                            '账单通常为每季度支付一次。'
+                        ]
+                    }
+                ],
+
+                get filteredServices() {
+                    if (this.activeCategory === 'all') return this.services;
+                    return this.services.filter(s => s.category === this.activeCategory);
+                },
+
+                async init() {
+                    const { data: { session } } = await supabaseClient.auth.getSession();
+                    this.user = session?.user || null;
+                    supabaseClient.auth.onAuthStateChange((_event, session) => {
+                        this.user = session?.user || null;
+                    });
+                },
+
+                getUserName() {
+                    if (!this.user || !this.user.email) return 'User';
+                    return this.user.email.split('@')[0];
+                },
+
+                getCategoryName(id) {
+                    const cat = this.categories.find(c => c.id === id);
+                    return cat ? cat.name : id;
+                },
+
+                openDetail(item) {
+                    this.selectedItem = item;
+                    this.modalOpen = true;
+                },
+
+                closeDetail() {
+                    this.modalOpen = false;
+                    // 小延迟清空，避免动画闪烁
+                    setTimeout(() => this.selectedItem = null, 300);
+                }
+            }
+        }
+    </script>
+</body>
+</html>
