@@ -21,15 +21,15 @@
         }
     </style>
 </head>
-<body class="bg-slate-50 min-h-screen flex flex-col items-center justify-center p-4 relative overflow-hidden selection:bg-rose-500 selection:text-white">
+<body class="bg-slate-50 min-h-screen flex flex-col items-center md:justify-center py-10 px-4 relative overflow-x-hidden selection:bg-rose-500 selection:text-white">
 
-    <div class="absolute top-0 left-0 w-96 h-96 bg-purple-300 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob"></div>
-    <div class="absolute top-0 right-0 w-96 h-96 bg-yellow-300 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob animation-delay-2000"></div>
-    <div class="absolute -bottom-32 left-20 w-96 h-96 bg-pink-300 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob animation-delay-4000"></div>
+    <div class="absolute top-0 left-0 w-96 h-96 bg-purple-300 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob pointer-events-none"></div>
+    <div class="absolute top-0 right-0 w-96 h-96 bg-yellow-300 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob animation-delay-2000 pointer-events-none"></div>
+    <div class="absolute -bottom-32 left-20 w-96 h-96 bg-pink-300 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob animation-delay-4000 pointer-events-none"></div>
 
     <main class="max-w-6xl w-full z-10 relative">
         
-        <div class="text-center mb-16 space-y-4">
+        <div class="text-center mb-12 md:mb-16 space-y-4">
             <h1 class="text-5xl md:text-7xl font-black text-slate-800 tracking-tighter drop-shadow-sm">
                 Sydney Life Hub
             </h1>
@@ -40,7 +40,7 @@
             </div>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-10 px-4">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-10 px-2 md:px-4">
 
             <a href="https://food.yangscape.com" class="group relative h-96 rounded-[2.5rem] overflow-hidden shadow-2xl transition-all duration-500 hover:-translate-y-3 cursor-pointer ring-4 ring-transparent hover:ring-rose-100">
                 <div class="absolute inset-0 bg-gradient-to-br from-[#FF9A9E] via-[#FECFEF] to-[#FFB6C1] transition-transform duration-700 group-hover:scale-110"></div>
@@ -116,7 +116,7 @@
 
         </div>
 
-        <footer class="mt-20 text-center">
+        <footer class="mt-16 md:mt-20 text-center pb-8">
             <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-slate-200/50 text-slate-500 text-xs font-bold hover:bg-white hover:shadow-sm transition-all cursor-default">
                 <span>© 2025 Yangscape Series</span>
                 <span class="w-1 h-1 rounded-full bg-slate-400"></span>
